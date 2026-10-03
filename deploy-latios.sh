@@ -172,7 +172,8 @@ pacman -Sy --noconfirm
 timedatectl set-ntp true
 
 log "Atualizando mirrorlist (Brasil, ordenado por velocidade)..."
-pacman -S --noconfirm --needed reflector
+# git: nem toda ISO traz (o clone dos dotfiles roda no chroot, mas fica de reserva)
+pacman -S --noconfirm --needed reflector git
 reflector \
     --country Brazil \
     --age 12 \
@@ -710,12 +711,15 @@ rm -rf "$DOT_DST"
 if [[ -f "$DOTFILES_LOCAL/install.sh" ]]; then
     cp -a "$DOTFILES_LOCAL" "$DOT_DST"
     ok "Dotfiles copiados de $DOTFILES_LOCAL"
-elif git clone --depth 1 "$DOTFILES_REPO" "$DOT_DST"; then
+# Clone pelo git do sistema INSTALADO (vem no pacstrap), já como o usuário:
+# não depende do que a ISO traz e o dono dos arquivos já sai certo.
+elif arch-chroot /mnt su - "$USERNAME" -c "git clone --depth 1 '$DOTFILES_REPO' ~/.dotfiles"; then
     ok "Dotfiles clonados de $DOTFILES_REPO"
 else
     DOT_OK=false
     warn "Não achei os dotfiles (nem local, nem $DOTFILES_REPO)."
-    warn "O Sway sobe com a config padrão. Depois: git clone <repo> ~/.dotfiles && ~/.dotfiles/install.sh"
+    warn "O Sway sobe com a config padrão. Depois do boot:"
+    warn "  git clone $DOTFILES_REPO ~/.dotfiles && ~/.dotfiles/install.sh"
 fi
 if $DOT_OK; then
     arch-chroot /mnt chown -R "$USERNAME:$USERNAME" "/home/$USERNAME/.dotfiles"
