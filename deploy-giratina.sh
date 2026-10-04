@@ -535,6 +535,7 @@ DRIVERS=(
 )
 SISTEMA=(
     fwupd smartmontools
+    ananicy-cpp cachyos-ananicy-rules   # habilitado lá embaixo; não depender de dependência
 )
 SESSAO=(
     greetd greetd-tuigreet
@@ -624,7 +625,9 @@ LLMNR=no
 RESOLVED
 
 echo "[chroot] Firewall: nenhuma porta de entrada (tudo vem pelo túnel)..."
-firewall-offline-cmd --set-default-zone=public
+# public já costuma ser a padrão, e aí o set dá ZONE_ALREADY_SET (erro)
+[[ "$(firewall-offline-cmd --get-default-zone)" == public ]] \
+    || firewall-offline-cmd --set-default-zone=public
 firewall-offline-cmd --zone=public --remove-service=ssh || true
 
 echo "[chroot] sshd: só local (127.0.0.1), só chave..."
