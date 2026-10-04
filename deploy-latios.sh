@@ -651,7 +651,7 @@ PARU
 # Um por um: se um pacote do AUR quebrar, os outros seguem.
 AUR=(
     ttf-google-sans            # UI
-    ttf-google-sans-code-nf    # terminal (Nerd Font)
+    ttf-google-sans-code-vf    # terminal (ícones vêm do Symbols Nerd Font)
     bibata-cursor-theme-bin
     papirus-folders
     hunspell-pt-br             # corretor do LibreOffice
