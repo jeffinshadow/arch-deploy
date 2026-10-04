@@ -626,12 +626,16 @@ echo "[chroot] Instalando paru (AUR helper) como $USERNAME..."
 echo '%wheel ALL=(ALL) NOPASSWD: /usr/bin/pacman' > /etc/sudoers.d/99-paru-install
 chmod 440 /etc/sudoers.d/99-paru-install
 
+# 'paru' (compilado), NÃO 'paru-bin': o binário pronto fica preso à versão
+# da libalpm com que foi gerado e quebra quando o pacman atualiza
+# ("cannot open shared object file"). Compila em alguns minutos; o -r
+# remove o rust (dependência de compilação) no fim.
 su - "$USERNAME" -c "
     cd /tmp &&
-    rm -rf paru-bin &&
-    git clone https://aur.archlinux.org/paru-bin.git &&
-    cd paru-bin &&
-    makepkg -si --noconfirm
+    rm -rf paru &&
+    git clone https://aur.archlinux.org/paru.git &&
+    cd paru &&
+    makepkg -si --noconfirm -r
 "
 
 cat > /etc/paru.conf <<'PARU'
