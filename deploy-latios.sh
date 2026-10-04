@@ -36,6 +36,7 @@
 #   B. Boot pela ISO. Rede:
 #        cabo:  ping -c 2 archlinux.org
 #        Wi-Fi: iwctl station wlan0 connect "NOME_DA_REDE"
+#        (a rede salva no live é levada pro sistema: o 1º boot já tem Wi-Fi)
 #   C. curl -fsSLO https://scripts.shadow.tec.br/deploy-latios.sh
 #      chmod +x deploy-latios.sh && ./deploy-latios.sh
 #      (se a pasta sway-dotfiles/ estiver ao lado do script, ela é usada;
@@ -81,6 +82,55 @@ log()   { echo -e "${BLUE}[*]${NC} $*"; }
 ok()    { echo -e "${GREEN}[OK]${NC} $*"; }
 warn()  { echo -e "${YELLOW}[!]${NC} $*"; }
 fail()  { echo -e "${RED}[X]${NC} $*"; exit 1; }
+
+# Converte as redes Wi-Fi salvas pelo iwd do live (iwctl) em conexões do
+# NetworkManager do sistema instalado — o 1º boot já sobe com rede.
+# Uso: migrar_wifi <dir do iwd> <dir system-connections do NM>
+migrar_wifi() {
+    local iwd_dir="$1" nm_dir="$2" f nome tipo ssid senha oculta saida n=0
+    mkdir -p "$nm_dir"
+    for f in "$iwd_dir"/*.psk "$iwd_dir"/*.open; do
+        [[ -f "$f" ]] || continue
+        nome=$(basename "$f"); tipo="${nome##*.}"; nome="${nome%.*}"
+        # iwd: SSID "simples" vira o nome do arquivo; o resto vira "=<hex>"
+        if [[ "$nome" == =* ]]; then
+            ssid=$(printf '%b' "$(sed 's/../\\x&/g' <<<"${nome#=}")")
+        else
+            ssid="$nome"
+        fi
+        if [[ -z "$ssid" || "$ssid" == *[\;\\]* || "$ssid" =~ [^[:print:]] ]]; then
+            warn "Wi-Fi '$nome': nome com caracteres especiais — configure no nmtui."
+            continue
+        fi
+        oculta=false
+        grep -qi '^Hidden=true' "$f" && oculta=true
+        if [[ "$tipo" == "psk" ]]; then
+            senha=$(sed -n 's/^Passphrase=//p' "$f" | head -n1)
+            [[ -n "$senha" ]] || senha=$(sed -n 's/^PreSharedKey=//p' "$f" | head -n1)
+            if [[ -z "$senha" ]]; then
+                warn "Wi-Fi '$ssid': senha não encontrada no iwd — configure no nmtui."
+                continue
+            fi
+            # keyfile do NM (GKeyFile): \ escapa barra; espaço inicial vira \s
+            senha="${senha//\\/\\\\}"
+            [[ "$senha" == " "* ]] && senha="\\s${senha:1}"
+        fi
+        saida="$nm_dir/${ssid//\//_}.nmconnection"
+        {
+            printf '[connection]\nid=%s\nuuid=%s\ntype=wifi\nautoconnect=true\n\n' "$ssid" "$(uuidgen)"
+            printf '[wifi]\nmode=infrastructure\nssid=%s\nhidden=%s\n\n' "$ssid" "$oculta"
+            if [[ "$tipo" == "psk" ]]; then
+                printf '[wifi-security]\nkey-mgmt=wpa-psk\npsk=%s\n\n' "$senha"
+            fi
+            printf '[ipv4]\nmethod=auto\n\n[ipv6]\nmethod=auto\n'
+        } > "$saida"
+        chmod 600 "$saida"
+        ok "Wi-Fi '$ssid' levado pro sistema instalado."
+        n=$((n + 1))
+    done
+    ((n)) || log "Nenhuma rede Wi-Fi salva no live (instalação por cabo)."
+    return 0
+}
 
 # ================================================================
 # VALIDAÇÕES INICIAIS
@@ -426,6 +476,9 @@ SESSAO=(
     network-manager-applet blueman pavucontrol
     xdg-user-dirs xdg-utils xdg-terminal-exec
     nwg-look nwg-displays
+    # Reserva: são o terminal e o menu da config PADRÃO do sway. Se os
+    # dotfiles não instalarem, o Super+Enter / Super+d ainda funcionam.
+    foot wmenu
 )
 TEMA=(
     adw-gtk-theme papirus-icon-theme qt6ct qt5-wayland qt6-wayland
@@ -692,6 +745,10 @@ chmod +x /mnt/root/chroot-setup.sh
 # ================================================================
 log "Entrando em arch-chroot pra configurar o sistema..."
 arch-chroot /mnt /root/chroot-setup.sh
+
+# Wi-Fi conectado no live (iwctl) → NetworkManager do sistema instalado
+log "Levando o Wi-Fi do live pro sistema instalado..."
+migrar_wifi /var/lib/iwd /mnt/etc/NetworkManager/system-connections
 
 # resolv.conf → stub do systemd-resolved (dentro do chroot o arquivo
 # está bind-montado, por isso é feito aqui fora)
