@@ -539,7 +539,7 @@ SISTEMA=(
 )
 SESSAO=(
     greetd greetd-tuigreet
-    sway swaybg swayidle swaylock waybar rofi mako kanshi swayosd
+    sway swaybg swayidle swaylock waybar rofi mako kanshi swayosd autotiling-rs
     xorg-xwayland xdg-desktop-portal-wlr xdg-desktop-portal-gtk
     polkit-gnome gnome-keyring seahorse libsecret
     grim slurp swappy wl-clipboard cliphist wl-mirror jq libnotify
