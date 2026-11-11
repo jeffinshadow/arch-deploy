@@ -443,11 +443,13 @@ sed -i 's/^HOOKS=.*/HOOKS=(base systemd autodetect microcode modconf kms keyboar
 #  - LUKS via sd-encrypt; discard = TRIM através do dm-crypt;
 #    no-*-workqueue = menos latência no SSD
 #  - tpm2-device=auto: antes do enroll só cai no fallback de senha, sem erro
-#  - amdgpu.ppfeaturemask: libera clocks/tensão/ventoinha da RX 580 pro LACT
+#  - amdgpu.ppfeaturemask: libera clocks/tensão/ventoinha da GPU pro LACT
+#  - amdgpu.vm_update_mode=3: a CPU atualiza as tabelas de página da GPU
+#    (gráfico e compute) no lugar do SDMA
 #  - nowatchdog: o watchdog não serve pra nada aqui (o cachyos-settings já
 #    tira o iTCO_wdt e o nmi_watchdog)
 mkdir -p /etc/kernel
-echo "rd.luks.name=$LUKS_UUID=$LUKS_NAME rd.luks.options=$LUKS_UUID=discard,no-read-workqueue,no-write-workqueue,tpm2-device=auto root=/dev/mapper/$LUKS_NAME rw quiet loglevel=3 udev.log_level=3 rd.udev.log_level=3 systemd.show_status=auto rd.systemd.show_status=auto amdgpu.ppfeaturemask=0xffffffff nowatchdog" > /etc/kernel/cmdline
+echo "rd.luks.name=$LUKS_UUID=$LUKS_NAME rd.luks.options=$LUKS_UUID=discard,no-read-workqueue,no-write-workqueue,tpm2-device=auto root=/dev/mapper/$LUKS_NAME rw quiet loglevel=3 udev.log_level=3 rd.udev.log_level=3 systemd.show_status=auto rd.systemd.show_status=auto amdgpu.ppfeaturemask=0xffffffff amdgpu.vm_update_mode=3 nowatchdog" > /etc/kernel/cmdline
 
 # Presets: uma UKI por kernel, sem imagem 'fallback' (o fallback é o LTS)
 mkdir -p /boot/EFI/Linux
