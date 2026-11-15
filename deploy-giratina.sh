@@ -446,10 +446,13 @@ sed -i 's/^HOOKS=.*/HOOKS=(base systemd autodetect microcode modconf kms keyboar
 #  - amdgpu.ppfeaturemask: libera clocks/tensão/ventoinha da GPU pro LACT
 #  - amdgpu.vm_update_mode=3: a CPU atualiza as tabelas de página da GPU
 #    (gráfico e compute) no lugar do SDMA
+#  - amdgpu.runpm=0: sem isso a placa dorme (runtime PM) quando o KVM tira o
+#    monitor dela, e dormindo não percebe o HDMI voltando: fica "sem sinal"
+#    até alguma coisa acordar a GPU
 #  - nowatchdog: o watchdog não serve pra nada aqui (o cachyos-settings já
 #    tira o iTCO_wdt e o nmi_watchdog)
 mkdir -p /etc/kernel
-echo "rd.luks.name=$LUKS_UUID=$LUKS_NAME rd.luks.options=$LUKS_UUID=discard,no-read-workqueue,no-write-workqueue,tpm2-device=auto root=/dev/mapper/$LUKS_NAME rw quiet loglevel=3 udev.log_level=3 rd.udev.log_level=3 systemd.show_status=auto rd.systemd.show_status=auto amdgpu.ppfeaturemask=0xffffffff amdgpu.vm_update_mode=3 nowatchdog" > /etc/kernel/cmdline
+echo "rd.luks.name=$LUKS_UUID=$LUKS_NAME rd.luks.options=$LUKS_UUID=discard,no-read-workqueue,no-write-workqueue,tpm2-device=auto root=/dev/mapper/$LUKS_NAME rw quiet loglevel=3 udev.log_level=3 rd.udev.log_level=3 systemd.show_status=auto rd.systemd.show_status=auto amdgpu.ppfeaturemask=0xffffffff amdgpu.vm_update_mode=3 amdgpu.runpm=0 nowatchdog" > /etc/kernel/cmdline
 
 # Presets: uma UKI por kernel, sem imagem 'fallback' (o fallback é o LTS)
 mkdir -p /boot/EFI/Linux
