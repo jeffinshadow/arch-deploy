@@ -548,7 +548,7 @@ SESSAO=(
     xorg-xwayland xdg-desktop-portal-wlr xdg-desktop-portal-gtk
     polkit-gnome gnome-keyring seahorse libsecret
     grim slurp swappy wl-clipboard cliphist wl-mirror jq libnotify
-    playerctl gammastep
+    playerctl
     network-manager-applet blueman pavucontrol
     xdg-user-dirs xdg-utils xdg-terminal-exec
     nwg-look nwg-displays
