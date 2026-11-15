@@ -468,7 +468,7 @@ ENERGIA=(
 )
 SESSAO=(
     greetd greetd-tuigreet
-    sway swaybg swayidle swaylock waybar rofi mako kanshi swayosd autotiling-rs
+    sway swaybg swayidle swaylock waybar rofi mako kanshi swayosd python
     xorg-xwayland xdg-desktop-portal-wlr xdg-desktop-portal-gtk
     polkit-gnome gnome-keyring seahorse libsecret
     grim slurp swappy wl-clipboard cliphist wl-mirror jq libnotify
@@ -651,6 +651,18 @@ echo "[chroot] Habilitando serviços..."
 systemctl enable NetworkManager.service
 systemctl enable systemd-resolved.service
 systemctl enable firewalld.service
+# SSH sempre ligado, só com chave (sem senha, sem root). A chave de quem
+# entra vai em ~/.ssh/authorized_keys depois da instalação. O firewalld já
+# libera o serviço ssh na zona padrão (public).
+cat > /etc/ssh/sshd_config.d/10-so-chave.conf <<SSHD
+# Só chave pública: sem senha, sem teclado interativo, sem root.
+PasswordAuthentication no
+KbdInteractiveAuthentication no
+PubkeyAuthentication yes
+PermitRootLogin no
+AllowUsers $USERNAME
+SSHD
+systemctl enable sshd.service
 systemctl enable greetd.service
 systemctl enable bluetooth.service
 systemctl enable tlp.service
