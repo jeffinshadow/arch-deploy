@@ -12,7 +12,7 @@
 #  Irmão do deploy-latios.sh. Mantém:
 #    * GPT + ESP 1G + raiz em LUKS2 (argon2id), systemd-boot
 #    * initramfs systemd + sd-encrypt, Secure Boot (sbctl)
-#    * Sway + greetd/tuigreet; dotfiles em repo próprio (sway-dotfiles)
+#    * Sway + greetd (ReGreet num sway próprio; tuigreet de reserva); dotfiles em repo próprio (sway-dotfiles)
 #  Muda:
 #    * CachyOS: repositórios v3 (pacotes compilados pra x86-64-v3),
 #      pacman do CachyOS, cachyos-settings (zram, sysctl, ananicy-cpp...)
@@ -543,7 +543,7 @@ SISTEMA=(
     ananicy-cpp cachyos-ananicy-rules   # habilitado lá embaixo; não depender de dependência
 )
 SESSAO=(
-    greetd greetd-tuigreet
+    greetd greetd-tuigreet greetd-regreet
     sway swaybg swayidle swaylock waybar rofi mako kanshi swayosd python
     xorg-xwayland xdg-desktop-portal-wlr xdg-desktop-portal-gtk
     polkit-gnome gnome-keyring seahorse libsecret
@@ -820,6 +820,9 @@ if $DOT_OK; then
     arch-chroot /mnt chown -R "$USERNAME:$USERNAME" "/home/$USERNAME/.dotfiles"
     arch-chroot /mnt su - "$USERNAME" -c "/home/$USERNAME/.dotfiles/install.sh --yes --host $HOSTNAME" \
         || warn "install.sh dos dotfiles terminou com erro — rode de novo depois do boot."
+    # Login gráfico (sway + ReGreet, com as duas telas configuradas); sem isso fica o tuigreet
+    arch-chroot /mnt "/home/$USERNAME/.dotfiles/tools/greetd-instalar.sh" "$HOSTNAME" \
+        || warn "greetd-instalar.sh falhou — o login continua no tuigreet."
 fi
 
 # ================================================================
